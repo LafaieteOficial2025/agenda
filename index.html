@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Agenda">
+<title>Agenda de Shows</title>
+<style>
+:root{--gold:#C9A227;--bg:#0A0A0A;--card:#141414;--line:rgba(201,162,39,.25);--text:#F3F0E6;--muted:#9a937f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;min-height:100vh;padding-bottom:40px}
+header{display:flex;justify-content:space-between;align-items:center;padding:18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+h1{font-size:20px;letter-spacing:2px;color:var(--gold);font-weight:600}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin:28px 18px 12px;font-weight:600}
+main{max-width:640px;margin:0 auto}
+.btn{background:transparent;border:1px solid var(--gold);color:var(--gold);padding:10px 16px;border-radius:8px;font-size:14px;cursor:pointer;text-decoration:none;display:inline-block;font-family:inherit}
+.btn-gold{background:var(--gold);color:var(--bg);font-weight:600}
+.btn-small{padding:6px 10px;font-size:12px}
+.btn-danger{border-color:#8a2b2b;color:#e06060}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 18px 12px;padding:16px}
+.card-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.titulo{font-size:17px;font-weight:600}
+.meta{color:var(--muted);font-size:13px;margin-top:4px;line-height:1.5}
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;border:1px solid var(--line);color:var(--gold);white-space:nowrap;text-transform:uppercase;letter-spacing:.5px}
+.money{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:13px;color:var(--muted)}
+.money b{color:var(--gold);font-weight:600}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.aviso{margin:0 18px 12px;padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,#1c1706,#141414);border:1px solid var(--gold)}
+.vazio{color:var(--muted);margin:0 18px;font-size:14px}
+#loading{text-align:center;color:var(--muted);padding:40px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.overlay.open{display:flex}
+.sheet{background:#111;border-top:1px solid var(--gold);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:20px}
+label{display:block;font-size:11px;color:var(--gold);margin:12px 0 4px;text-transform:uppercase;letter-spacing:1px}
+input,select,textarea{width:100%;background:var(--bg);border:1px solid #333;color:var(--text);padding:11px;border-radius:8px;font-size:15px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold)}
+textarea{min-height:80px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-btns{display:flex;gap:10px;margin-top:20px;justify-content:flex-end;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header>
+  <h1>AGENDA</h1>
+  <button class="btn btn-gold" onclick="abrirForm()">+ Novo evento</button>
+</header>
+
+<main>
+  <div id="avisos"></div>
+  <h2>Próximos 7 dias</h2>
+  <div id="semana"></div>
+  <h2>Todos os eventos</h2>
+  <div id="todos"></div>
+  <div id="loading">Carregando...</div>
+</main>
+
+<div class="overlay" id="overlay" onclick="fecharSeFora(event)">
+  <div class="sheet">
+    <h1 style="margin-bottom:6px">EVENTO</h1>
+    <form id="form" onsubmit="salvar(event)">
+      <label>Data</label>
+      <input type="date" id="data" required>
+      <label>Horário</label>
+      <input type="time" id="horario">
+      <label>Contratante</label>
+      <input id="contratante" required>
+      <label>Local</label>
+      <input id="local" placeholder="Nome do local">
+      <label>Endereço</label>
+      <input id="endereco" placeholder="Rua, número, bairro">
+      <label>Cidade</label>
+      <input id="cidade">
+      <div class="row">
+        <div>
+          <label>Valor (R$)</label>
+          <input type="number" step="0.01" id="valor">
+        </div>
+        <div>
+          <label>Recebido (R$)</label>
+          <input type="number" step="0.01" id="valor_recebido">
+        </div>
+      </div>
+      <label>Status</label>
+      <select id="status">
+        <option value="a confirmar">A confirmar</option>
+        <option value="confirmado">Confirmado</option>
+        <option value="realizado">Realizado</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+      <label>Anotações</label>
+      <textarea id="anotacoes"></textarea>
+      <div class="form-btns">
+        <button type="button" class="btn btn-danger" id="btnExcluir" style="display:none" onclick="excluir()">Excluir</button>
+        <button type="button" class="btn" onclick="fecharForm()">Cancelar</button>
+        <button type="submit" class="btn btn-gold">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ===== CONFIGURAÇÃO =====
+// Substitua este objeto pelo firebaseConfig do seu app Web
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const colEventos = collection(db, "eventos");
+
+let eventos = [];
+let editandoId = null;
+const CAMPOS = ['data','horario','contratante','local','endereco','cidade','valor','valor_recebido','status','anotacoes'];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const moeda = v => Number(v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+const dataBR = d => { const [a,m,dia] = d.split('-'); return `${dia}/${m}/${a}`; };
+const dtEvento = e => new Date(`${e.data}T${e.horario || '00:00'}`);
+const hoje0 = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+
+function mapLinks(e) {
+  const q = encodeURIComponent([e.local, e.endereco, e.cidade].filter(Boolean).join(', '));
+  return {
+    google: `https://www.google.com/maps/search/?api=1&query=${q}`,
+    waze: `https://waze.com/ul?q=${q}&navigate=yes`
+  };
+}
+
+// Escuta em tempo real: as alterações do sócio aparecem na hora
+const q = query(colEventos, orderBy("data"), orderBy("horario"));
+onSnapshot(q, snap => {
+  eventos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  $('loading').style.display = 'none';
+  render();
+}, err => {
+  $('loading').style.display = 'block';
+  $('loading').textContent = 'Erro ao carregar: ' + err.message;
+});
+
+function card(e) {
+  const saldo = Number(e.valor || 0) - Number(e.valor_recebido || 0);
+  const m = mapLinks(e);
+  return `
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="titulo">${esc(e.contratante)}</div>
+        <div class="meta">${dataBR(e.data)}${e.horario ? ' · ' + esc(e.horario) : ''}${e.cidade ? ' · ' + esc(e.cidade) : ''}</div>
+        ${e.local ? `<div class="meta">${esc(e.local)}</div>` : ''}
+      </div>
+      <span class="badge">${esc(e.status)}</span>
+    </div>
+    <div class="money">
+      <span>Valor <b>${moeda(e.valor)}</b></span>
+      <span>Recebido <b>${moeda(e.valor_recebido)}</b></span>
+      <span>Saldo <b>${moeda(saldo)}</b></span>
+    </div>
+    ${e.anotacoes ? `<div class="meta" style="margin-top:10px">${esc(e.anotacoes)}</div>` : ''}
+    <div class="actions">
+      <a class="btn btn-small" href="${m.google}" target="_blank" rel="noopener">Google Maps</a>
+      <a class="btn btn-small" href="${m.waze}" target="_blank" rel="noopener">Waze</a>
+      <button class="btn btn-small" onclick="abrirForm('${e.id}')">Editar</button>
+    </div>
+  </div>`;
+}
+
+function render() {
+  const agora = new Date();
+  const zero = hoje0();
+  const limite7 = new Date(zero); limite7.setDate(limite7.getDate() + 7);
+  const limite48 = new Date(agora.getTime() + 48 * 3600 * 1000);
+  const ativos = eventos.filter(e => e.status !== 'cancelado');
+
+  const avisos = ativos.filter(e => { const d = dtEvento(e); return d >= agora && d <= limite48; });
+  let htmlAvisos = avisos.map(e => `
+    <div class="aviso">
+      <b style="color:var(--gold)">⏰ Evento em breve</b>
+      <div class="meta" style="color:var(--text)">${dataBR(e.data)}${e.horario ? ' às ' + esc(e.horario) : ''} · ${esc(e.contratante)}${e.cidade ? ' · ' + esc(e.cidade) : ''}</div>
+    </div>`).join('');
+
+  if ('Notification' in window) {
+    if (Notification.permission === 'default') {
+      htmlAvisos += `<div style="margin:0 18px 12px"><button class="btn btn-small" onclick="pedirPermissao()">Ativar notificações</button></div>`;
+    } else if (Notification.permission === 'granted' && avisos.length && !sessionStorage.getItem('notificado')) {
+      avisos.forEach(e => new Notification('Evento em breve', { body: `${dataBR(e.data)} · ${e.contratante}` }));
+      sessionStorage.setItem('notificado', '1');
+    }
+  }
+  $('avisos').innerHTML = htmlAvisos;
+
+  const semana = ativos.filter(e => { const d = dtEvento(e); return d >= zero && d <
