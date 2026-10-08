@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Agenda">
+<link rel="icon" href="data:,">
 <title>Agenda de Shows</title>
 <style>
 :root{--gold:#C9A227;--bg:#0A0A0A;--card:#141414;--line:rgba(201,162,39,.25);--text:#F3F0E6;--muted:#9a937f}
@@ -100,36 +102,22 @@ textarea{min-height:80px;resize:vertical}
   </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+<script>
 // ===== CONFIGURAÇÃO =====
-// Substitua este objeto pelo firebaseConfig do seu app Web
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
+// Substitua os "COLE_AQUI" pelos valores do firebaseConfig do seu app Web
 const firebaseConfig = {
-  apiKey: "AIzaSyBsGD8iINRxPt4GKI2wxJ9GCjnfkJVkTLs",
-  authDomain: "agenda-shows-73a4a.firebaseapp.com",
-  projectId: "agenda-shows-73a4a",
-  storageBucket: "agenda-shows-73a4a.firebasestorage.app",
-  messagingSenderId: "541059066551",
-  appId: "1:541059066551:web:8b00310bee1da5bcdf3b32"
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const colEventos = collection(db, "eventos");
 
 let eventos = [];
 let editandoId = null;
+let colEventos = null;
+let fb = null;
 const CAMPOS = ['data','horario','contratante','local','endereco','cidade','valor','valor_recebido','status','anotacoes'];
 
 const $ = id => document.getElementById(id);
@@ -147,16 +135,10 @@ function mapLinks(e) {
   };
 }
 
-// Escuta em tempo real: as alterações do sócio aparecem na hora
-const q = query(colEventos, orderBy("data"), orderBy("horario"));
-onSnapshot(q, snap => {
-  eventos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  $('loading').style.display = 'none';
-  render();
-}, err => {
+function mostrarErro(msg) {
   $('loading').style.display = 'block';
-  $('loading').textContent = 'Erro ao carregar: ' + err.message;
-});
+  $('loading').textContent = msg;
+}
 
 function card(e) {
   const saldo = Number(e.valor || 0) - Number(e.valor_recebido || 0);
@@ -209,4 +191,79 @@ function render() {
   }
   $('avisos').innerHTML = htmlAvisos;
 
-  const semana = ativos.filter(e => { const d = dtEvento(e); return d >= zero && d <
+  const semana = ativos.filter(e => { const d = dtEvento(e); return d >= zero && d < limite7; });
+  $('semana').innerHTML = semana.length
+    ? semana.map(card).join('')
+    : '<p class="vazio">Nenhum evento nos próximos 7 dias.</p>';
+
+  $('todos').innerHTML = eventos.length
+    ? eventos.map(card).join('')
+    : '<p class="vazio">Nenhum evento cadastrado.</p>';
+}
+
+// Funções globais (definidas antes do Firebase, para os botões sempre funcionarem)
+window.pedirPermissao = () => Notification.requestPermission().then(render);
+
+window.abrirForm = function(id) {
+  editandoId = id || null;
+  const e = id ? eventos.find(x => x.id === id) : {};
+  CAMPOS.forEach(c => { $(c).value = e[c] ?? (c === 'status' ? 'a confirmar' : ''); });
+  $('btnExcluir').style.display = id ? 'inline-block' : 'none';
+  $('overlay').classList.add('open');
+};
+
+window.fecharForm = () => $('overlay').classList.remove('open');
+window.fecharSeFora = ev => { if (ev.target.id === 'overlay') window.fecharForm(); };
+
+window.salvar = async function(ev) {
+  ev.preventDefault();
+  if (!fb) return alert('Banco de dados não conectado. Verifique a configuração do Firebase.');
+  const registro = {};
+  ['data','horario','contratante','local','endereco','cidade','status','anotacoes']
+    .forEach(c => registro[c] = $(c).value || null);
+  ['valor','valor_recebido']
+    .forEach(c => registro[c] = $(c).value === '' ? 0 : Number($(c).value));
+  try {
+    if (editandoId) await fb.updateDoc(fb.doc(fb.db, "eventos", editandoId), registro);
+    else await fb.addDoc(colEventos, registro);
+    window.fecharForm();
+  } catch (err) {
+    alert('Erro ao salvar: ' + err.message);
+  }
+};
+
+window.excluir = async function() {
+  if (!fb || !editandoId || !confirm('Excluir este evento?')) return;
+  try {
+    await fb.deleteDoc(fb.doc(fb.db, "eventos", editandoId));
+    window.fecharForm();
+  } catch (err) {
+    alert('Erro ao excluir: ' + err.message);
+  }
+};
+
+setInterval(render, 60000);
+
+// Conexão com o Firebase (carregada como módulo, sem travar o restante)
+(async () => {
+  try {
+    const appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
+    const fs = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js");
+    const app = appMod.initializeApp(firebaseConfig);
+    const db = fs.getFirestore(app);
+    colEventos = fs.collection(db, "eventos");
+    fb = { db, ...fs };
+
+    const q = fs.query(colEventos, fs.orderBy("data"), fs.orderBy("horario"));
+    fs.onSnapshot(q, snap => {
+      eventos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      $('loading').style.display = 'none';
+      render();
+    }, err => mostrarErro('Erro ao carregar: ' + err.message));
+  } catch (err) {
+    mostrarErro('Erro ao conectar ao Firebase: ' + err.message);
+  }
+})();
+</script>
+</body>
+</html>
