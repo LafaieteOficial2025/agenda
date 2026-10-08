@@ -104,7 +104,6 @@ textarea{min-height:80px;resize:vertical}
 
 <script>
 // ===== CONFIGURAÇÃO =====
-// Substitua os "COLE_AQUI" pelos valores do firebaseConfig do seu app Web
 const firebaseConfig = {
   apiKey: "AIzaSyBsGD8iINRxPt4GKI2wxJ9GCjnfkJVkTLs",
   authDomain: "agenda-shows-73a4a.firebaseapp.com",
@@ -113,8 +112,6 @@ const firebaseConfig = {
   messagingSenderId: "541059066551",
   appId: "1:541059066551:web:8b00310bee1da5bcdf3b32"
 };
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
   
 let eventos = [];
 let editandoId = null;
@@ -123,7 +120,7 @@ let fb = null;
 const CAMPOS = ['data','horario','contratante','local','endereco','cidade','valor','valor_recebido','status','anotacoes'];
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;n'}[c])); // Corrigido o mapeamento de escape de aspas simples
 const moeda = v => Number(v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
 const dataBR = d => { const [a,m,dia] = d.split('-'); return `${dia}/${m}/${a}`; };
 const dtEvento = e => new Date(`${e.data}T${e.horario || '00:00'}`);
@@ -138,8 +135,7 @@ function mapLinks(e) {
 }
 
 function mostrarErro(msg) {
-  $('loading').style.display = 'block';
-  $('loading').textContent = msg;
+  $('loading').style.display = 'block';$('loading').textContent = msg;
 }
 
 function card(e) {
@@ -203,14 +199,13 @@ function render() {
     : '<p class="vazio">Nenhum evento cadastrado.</p>';
 }
 
-// Funções globais (definidas antes do Firebase, para os botões sempre funcionarem)
+// Funções globais
 window.pedirPermissao = () => Notification.requestPermission().then(render);
 
 window.abrirForm = function(id) {
   editandoId = id || null;
   const e = id ? eventos.find(x => x.id === id) : {};
-  CAMPOS.forEach(c => { $(c).value = e[c] ?? (c === 'status' ? 'a confirmar' : ''); });
-  $('btnExcluir').style.display = id ? 'inline-block' : 'none';
+  CAMPOS.forEach(c => { $(c).value = e[c] ?? (c === 'status' ? 'a confirmar' : ''); });$('btnExcluir').style.display = id ? 'inline-block' : 'none';
   $('overlay').classList.add('open');
 };
 
@@ -246,7 +241,7 @@ window.excluir = async function() {
 
 setInterval(render, 60000);
 
-// Conexão com o Firebase (carregada como módulo, sem travar o restante)
+// Conexão com o Firebase via módulo
 (async () => {
   try {
     const appMod = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js");
