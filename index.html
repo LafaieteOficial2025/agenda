@@ -106,13 +106,23 @@ import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot
 
 // ===== CONFIGURAÇÃO =====
 // Substitua este objeto pelo firebaseConfig do seu app Web
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "COLE_AQUI",
-  authDomain: "COLE_AQUI",
-  projectId: "COLE_AQUI",
-  storageBucket: "COLE_AQUI",
-  messagingSenderId: "COLE_AQUI",
-  appId: "COLE_AQUI"
+  apiKey: "AIzaSyBsGD8iINRxPt4GKI2wxJ9GCjnfkJVkTLs",
+  authDomain: "agenda-shows-73a4a.firebaseapp.com",
+  projectId: "agenda-shows-73a4a",
+  storageBucket: "agenda-shows-73a4a.firebasestorage.app",
+  messagingSenderId: "541059066551",
+  appId: "1:541059066551:web:8b00310bee1da5bcdf3b32"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
