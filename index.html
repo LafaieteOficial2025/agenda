@@ -120,7 +120,7 @@ let fb = null;
 const CAMPOS = ['data','horario','contratante','local','endereco','cidade','valor','valor_recebido','status','anotacoes'];
 
 const $ = id => document.getElementById(id);
-const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;n'}[c])); // Corrigido o mapeamento de escape de aspas simples
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const moeda = v => Number(v || 0).toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
 const dataBR = d => { const [a,m,dia] = d.split('-'); return `${dia}/${m}/${a}`; };
 const dtEvento = e => new Date(`${e.data}T${e.horario || '00:00'}`);
